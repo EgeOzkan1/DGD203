@@ -1,5 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Numerics;
+using System.Collections.Generic;
 
 namespace DGD203_2
 {
@@ -9,8 +11,8 @@ namespace DGD203_2
 
         #region Game Constants
 
-        private const int _defaultMapWidth = 5;
-        private const int _defaultMapHeight = 5;
+        private const int _defaultMapWidth = 7;
+        private const int _defaultMapHeight = 7;
 
         #endregion
 
@@ -46,25 +48,23 @@ namespace DGD203_2
         public void StartGame(Game gameInstanceReference)
         {
             // Generate game environment
-            CreateNewMap();
+            CreateNewMap(_defaultMapWidth, _defaultMapHeight);
 
             // Load game
             LoadGame();
 
             // Deal with player generation
             CreatePlayer();
-            
 
             InitializeGameConditions();
 
             _gameRunning = true;
             StartGameLoop();
-            
         }
 
-        private void CreateNewMap()
+        private void CreateNewMap(int width, int height)
         {
-            _gameMap = new Map(this, _defaultMapWidth, _defaultMapHeight);
+            _gameMap = new Map(this, width, height);
         }
 
         private void CreatePlayer()
@@ -79,7 +79,6 @@ namespace DGD203_2
                 _loadedItems = new List<Item>();
             }
 
-            // _playerName may be null. It would be a good idea to put a check here.
             Player = new Player(_playerName, _loadedItems);
         }
 
@@ -108,7 +107,6 @@ namespace DGD203_2
         {
             _gameMap.CheckForLocation(_gameMap.GetCoordinates());
         }
-
 
         #endregion
 
@@ -209,7 +207,7 @@ namespace DGD203_2
             string path = SaveFilePath();
 
             if (!File.Exists(path)) return;
-            
+
             // Reading the file contents
             string[] saveContent = File.ReadAllLines(path);
 
@@ -236,7 +234,6 @@ namespace DGD203_2
             }
 
             _gameMap.SetCoordinates(coordArray);
-
         }
 
         private void SaveGame()
@@ -252,8 +249,8 @@ namespace DGD203_2
             for (int i = 0; i < items.Count; i++)
             {
                 playerItems += items[i].ToString();
-                
-                if(i != items.Count -1)
+
+                if (i != items.Count - 1)
                 {
                     playerItems += ",";
                 }

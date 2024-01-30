@@ -1,5 +1,6 @@
 ﻿using DGD203_2;
 using System;
+using System.Collections.Generic;
 
 public class Combat
 {
@@ -7,20 +8,15 @@ public class Combat
 
     private Game _theGame;
     public Player Player { get; private set; }
-
     public List<Enemy> Enemies { get; private set; }
-
-	private Location _location;
+    private Location _location;
 
     #endregion
 
     #region VARIABLES
 
     private const int maxNumberOfEnemies = 3;
-
     private bool _isOngoing;
-
-
     private string _playerInput;
 
     #endregion
@@ -28,106 +24,114 @@ public class Combat
     #region CONSTRUCTOR
 
     public Combat(Game game, Location location)
-	{
-		_theGame = game;
-		Player = game.Player;
+    {
+        _theGame = game;
+        Player = game.Player;
+        _isOngoing = false;
+        _location = location;
 
-		_isOngoing = false;
+        Random rand = new Random();
+        int numberOfEnemies = rand.Next(1, maxNumberOfEnemies + 1);
 
-		_location = location;
+        Enemies = new List<Enemy>();
+        for (int i = 0; i < numberOfEnemies; i++)
+        {
+            Enemy nextEnemy;
+            if (rand.Next(0, 2) == 0)
+            {
+                nextEnemy = new Goblin();
+            }
+            else
+            {
+                nextEnemy = new Skeleton();
+            }
 
-		Random rand = new Random();
-		int numberOfEnemies = rand.Next(1, maxNumberOfEnemies + 1);
-
-		Enemies = new List<Enemy>();
-		for (int i = 0; i < numberOfEnemies; i++)
-		{
-			Enemy nextEnemy = new Goblin();
-			Enemies.Add(nextEnemy);
-		}
-	}
+            Enemies.Add(nextEnemy);
+        }
+    }
 
     #endregion
-
 
     #region METHODS
 
     #region Initialization & Loop
 
     public void StartCombat()
-	{
-		_isOngoing = true;
+    {
+        _isOngoing = true;
 
-		while (_isOngoing)
-		{
-			GetInput();
-			ProcessInput();
+        while (_isOngoing)
+        {
+            GetInput();
+            ProcessInput();
 
-			if (!_isOngoing) break;
+            if (!_isOngoing) break;
 
-			ProcessEnemyActions();
-			CheckPlayerPulse();
-		}
-	}
+            ProcessEnemyActions();
+            CheckPlayerPulse();
+        }
+    }
 
-	private void GetInput()
-	{
-		Console.WriteLine($"There are {Enemies.Count} goblin(s) in front of you. What do you want to do?");
-		for (int i = 0; i < Enemies.Count; i++)
-		{
-			Console.WriteLine($"[{i + 1}]: Attack goblin {i + 1}");
-		}
-		Console.WriteLine($"[{Enemies.Count + 1}]: Try to flee (50% chance)");
-		_playerInput = Console.ReadLine();
-	}
+    private void GetInput()
+    {
+        Console.WriteLine($"There are {Enemies.Count} enemy(s) in front of you. What do you want to do?");
+        for (int i = 0; i < Enemies.Count; i++)
+        {
+            Console.WriteLine($"[{i + 1}]: Attack enemy {i + 1} ({Enemies[i].GetType().Name})");
+        }
+        Console.WriteLine($"[{Enemies.Count + 1}]: Try to flee (50% chance)");
+        _playerInput = Console.ReadLine();
+    }
 
-	private void ProcessInput()
-	{
-        if (_playerInput == "" || _playerInput == null)
+    private void ProcessInput()
+    {
+        if (string.IsNullOrEmpty(_playerInput))
         {
             Console.WriteLine("You can't just stand still, they will attack you!");
             return;
         }
 
-		ProcessChoice(_playerInput);
+        ProcessChoice(_playerInput);
     }
 
+    private void ProcessChoice(string choice)
+    {
+        if (Int32.TryParse(choice, out int value)) // When the command is an integer
+        {
+            if (value > Enemies.Count + 1)
+            {
+                Console.WriteLine("That is not a valid choice");
+            }
+            else
+            {
+                if (value == Enemies.Count + 1)
+                {
+                    TryToFlee();
+                }
+                else
+                {
+                    HitEnemy(value);
+                }
+            }
+        }
+        else // When the command is not an integer
+        {
+            Console.WriteLine("You don't make any sense. Quit babbling, they are going to kill you!");
+        }
+    }
 
-	private void ProcessChoice(string choice)
-	{
-		if (Int32.TryParse(choice, out int value)) // When the command is an integer
-		{
-			if (value > Enemies.Count + 1)
-			{
-				Console.WriteLine("That is not a valid choice");
-			} else
-			{
-				if (value == Enemies.Count + 1) 
-				{
-					TryToFlee();
-				} else
-				{
-					HitEnemy(value);
-				}
-			}
-		} else // When the command is not an integer
-		{
-			Console.WriteLine("You don't make any sense. Quit babbling, they are going to kill you!");
-		}
-	}
-
-	private void CheckPlayerPulse()
-	{
-		if (Player.Health <= 0)
-		{
-			EndCombat();
-		}
-	}
+    private void CheckPlayerPulse()
+    {
+        if (Player.Health <= 0)
+        {
+            EndCombat();
+        }
+    }
 
     private void EndCombat()
     {
         _isOngoing = false;
-		_location.CombatHappened();
+        _location.CombatHappened();
     }
 
     #endregion
@@ -135,54 +139,52 @@ public class Combat
     #region Combat
 
     private void TryToFlee()
-	{
-		Random rand = new Random();
-		double randomNumber = rand.NextDouble();
+    {
+        Random rand = new Random();
+        double randomNumber = rand.NextDouble();
 
-		if (randomNumber >= 0.5f)
-		{
-			Console.WriteLine("You flee! You are a coward maybe, but a live one!");
-			EndCombat();
-		} else
-		{
-			Console.WriteLine("You cannot flee because a goblin is in your way");
-		}
-	}
+        if (randomNumber >= 0.5f)
+        {
+            Console.WriteLine("You flee! You are a coward maybe, but a live one!");
+            EndCombat();
+        }
+        else
+        {
+            Console.WriteLine("You cannot flee because an enemy is in your way");
+        }
+    }
 
     private void HitEnemy(int index)
-	{
-		int enemyIndex = index - 1;
-		int playerDamage = Player.Damage();
+    {
+        int enemyIndex = index - 1;
+        int playerDamage = Player.Damage();
 
-		Enemies[enemyIndex].TakeDamage(playerDamage);
-		Console.WriteLine($"The goblin takes {playerDamage} damage!");
+        Enemies[enemyIndex].TakeDamage(playerDamage);
+        Console.WriteLine($"The {Enemies[enemyIndex].GetType().Name} takes {playerDamage} damage!");
 
-		if (Enemies[enemyIndex].Health <= 0)
-		{
-			Console.WriteLine("This goblin is toast!");
-			Enemies.RemoveAt(enemyIndex);
-		}
-	}
+        if (Enemies[enemyIndex].Health <= 0)
+        {
+            Console.WriteLine($"This {Enemies[enemyIndex].GetType().Name} is defeated!");
+            Enemies.RemoveAt(enemyIndex);
+        }
+    }
 
-	private void ProcessEnemyActions()
-	{
-		if (Enemies.Count == 0)
-		{
-			Console.WriteLine("You defeated all your enemies!");
-			EndCombat();
-		}
+    private void ProcessEnemyActions()
+    {
+        if (Enemies.Count == 0)
+        {
+            Console.WriteLine("You defeated all your enemies!");
+            EndCombat();
+        }
 
-		for (int i = 0; i < Enemies.Count; i++)
-		{
-			int goblinDamage = Enemies[i].Damage;
-			Player.TakeDamage(goblinDamage);
-		}
-	}
+        for (int i = 0; i < Enemies.Count; i++)
+        {
+            int enemyDamage = Enemies[i].Damage;
+            Player.TakeDamage(enemyDamage);
+        }
+    }
 
+    #endregion
 
-
-	#endregion
-
-	#endregion
-
+    #endregion
 }

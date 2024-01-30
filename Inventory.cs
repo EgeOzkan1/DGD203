@@ -34,5 +34,6 @@ public enum Item
 {
 	Charm,
 	Rune,
-	Coin
+	Coin,
+	
 }
